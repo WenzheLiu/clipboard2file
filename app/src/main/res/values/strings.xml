@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Clipboard To File</string>
+    <string name="content">Content</string>
+    <string name="title">Title</string>
+</resources>
