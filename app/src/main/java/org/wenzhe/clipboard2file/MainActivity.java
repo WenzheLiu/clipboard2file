@@ -23,6 +23,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.regex.Pattern;
 
+/**
+ * author: liuwenzhe2008@qq.com
+ */
 public class MainActivity extends AppCompatActivity {
 
     private static final int TITLE_MAX_CHAR = 30;
