@@ -34,42 +34,57 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
-        <ImageButton
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/paste_32px"
-            android:id="@+id/pasteToContentBtn" />
+            android:layout_height="match_parent">
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/clean_32px"
-            android:id="@+id/cleanBtn" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/paste_32px"
+                android:id="@+id/pasteToContentBtn" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/save_32px"
-            android:id="@+id/saveButton" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/add_32px"
+                android:id="@+id/pasteToAppendContentBtn" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/open_32px"
-            android:id="@+id/openBtn" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/clean_32px"
+                android:id="@+id/cleanBtn" />
 
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/character_32px"
+                android:id="@+id/characterBtn" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/save_32px"
+                android:id="@+id/saveButton" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/open_32px"
+                android:id="@+id/openBtn" />
+
+        </LinearLayout>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/contentView"
+            android:hint="@string/content"
+            android:gravity="top|left" />
     </LinearLayout>
-
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/contentView"
-        android:inputType="textMultiLine"
-        android:hint="@string/content"
-        android:gravity="top|left"
-        android:scrollbarAlwaysDrawVerticalTrack="true"
-        android:textIsSelectable="true" />
 
 </LinearLayout>

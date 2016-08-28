@@ -12,12 +12,15 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView titleView;
     private TextView contentView;
+    private boolean saveChineseLineOnly = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         handleClean();
         handleSave();
         handleOpen();
+        handlePasteAppendToContext();
+        handleSaveChineseLineOnly();
     }
 
     private void handleOpen() {
@@ -145,9 +151,10 @@ public class MainActivity extends AppCompatActivity {
                 targetFile.getParentFile().mkdirs();
                 targetFile.createNewFile();
             }
+            String content = getContentToSave();
             FileWriter out = new FileWriter(targetFile);
             try {
-                out.write(contentView.getText().toString());
+                out.write(content);
             } finally {
                 out.close();
             }
@@ -161,6 +168,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private String getContentToSave() {
+        String content = contentView.getText().toString();
+        if (!saveChineseLineOnly) {
+            return content;
+        }
+        BufferedReader reader = new BufferedReader(new StringReader(content));
+        try {
+            try {
+                StringBuilder writer = new StringBuilder();
+                String line;
+                boolean lastLineEmpty = false;
+                while ((line = reader.readLine()) != null) {
+                    if (containsChineseCharacter(line)) {
+                        writer.append(line);
+                        lastLineEmpty = false;
+                    } else if (!lastLineEmpty) {
+                        writer.append("\n");  // System.lineSeparator()
+                        lastLineEmpty = true;
+                    }
+                }
+                return writer.toString();
+            } finally {
+                reader.close();
+            }
+        } catch (IOException e) {
+            Log.e("Get content fail", e.getMessage(), e);
+            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+            return "";
+        }
+    }
+
+    public static final boolean containsChineseCharacter(String str) {
+        char[] charArray = str.toCharArray();
+        for (int i = 0; i < charArray.length; i++) {
+            if ((charArray[i] >= 0x4e00) && (charArray[i] <= 0x9fbb)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private File getFileToSave() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
         String datePath = df.format(Calendar.getInstance().getTime());
@@ -169,6 +217,9 @@ public class MainActivity extends AppCompatActivity {
         File targetDir = new File(extStorageDir, "clipboard2file/" + datePath);
 
         String targetFileName = convertToValidFileName(titleView.getText().toString());
+        if (saveChineseLineOnly) {
+            targetFileName += targetFileName + ".chn";
+        }
         return new File(targetDir, targetFileName + ".txt");
     }
 
@@ -190,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
     private String getPasteContent() {
         // Gets a handle to the clipboard service.
         ClipboardManager mClipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        StringBuilder sb = new StringBuilder();
+
         if (!mClipboard.hasPrimaryClip()) {
             Toast.makeText(this,
                     "Clipboard is empty", Toast.LENGTH_SHORT).show();
@@ -198,13 +249,53 @@ public class MainActivity extends AppCompatActivity {
         }
         ClipData clipData = mClipboard.getPrimaryClip();
         int count = clipData.getItemCount();
-
-        for (int i = 0; i < count; ++i) {
-            ClipData.Item item = clipData.getItemAt(i);
+        if (count > 0) {
+            ClipData.Item item = clipData.getItemAt(0);
             CharSequence str = item.coerceToText(this);
-            Log.i("pasteToResult", "item : " + i + ": " + str);
-            sb.append(str);
+            return str.toString();
+        } else {
+            return "";
         }
-        return sb.toString();
+
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 0; i < count; ++i) {
+//            ClipData.Item item = clipData.getItemAt(i);
+//            CharSequence str = item.coerceToText(this);
+//            Log.i("pasteToResult", "item : " + i + ": " + str);
+//            sb.append(str);
+//        }
+//        return sb.toString();
+    }
+
+    private void handlePasteAppendToContext() {
+        View btn = findViewById(R.id.pasteToAppendContentBtn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String clipText = getPasteContent();
+                if (clipText != null) {
+                    contentView.append(clipText.trim());
+                    //TODO: scroll to end
+                    Toast.makeText(MainActivity.this,
+                            "Clipboard text has appended to text.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void handleSaveChineseLineOnly() {
+        final ImageButton btn = (ImageButton) findViewById(R.id.characterBtn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (saveChineseLineOnly) {
+                    btn.setImageResource(R.drawable.character_32px);
+                    saveChineseLineOnly = false;
+                } else {
+                    btn.setImageResource(R.drawable.china_32px);
+                    saveChineseLineOnly = true;
+                }
+            }
+        });
     }
 }
