@@ -5,9 +5,11 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Path;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,11 +18,17 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -34,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int TITLE_MAX_CHAR = 30;
     private static final String PATTERN_FOR_FILE_NAME_RESERVED_CHAR =
             "[" + Pattern.quote("/\\?%*:|\"<>. ") + "]";
+    private static final int FILE_SELECT_CODE = 1;
+    public static final String CHN = ".chn";
 
     private TextView titleView;
     private TextView contentView;
@@ -50,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         handlePasteToTitle();
         handlePasteToContent();
         handleClean();
+        handleLoad();
         handleSave();
         handleOpen();
         handlePasteAppendToContext();
@@ -121,6 +132,62 @@ public class MainActivity extends AppCompatActivity {
                 contentView.setText("");
             }
         });
+    }
+
+    private void handleLoad() {
+        View loadBtn = findViewById(R.id.loadBtn);
+        loadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("text/plain");
+
+                Uri uri = Uri.fromFile(getFolderToSave());
+                intent.setDataAndType(uri, "text/plain");
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                try {
+                    startActivityForResult(intent, FILE_SELECT_CODE);
+                } catch (android.content.ActivityNotFoundException ex) {
+                    // Potentially direct the user to the Market with a Dialog
+                    Toast.makeText(MainActivity.this, "Please install a file browser", Toast.LENGTH_SHORT)
+                            .show();
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+        switch (requestCode) {
+            case FILE_SELECT_CODE:
+                Uri url = data.getData();
+                if (url == null) {
+                    break;
+                }
+                try {
+                    loadFile(url);
+                } catch (Exception e) {
+                    Log.e("fail to load", e.getMessage(), e);
+                    Toast.makeText(MainActivity.this, "Fail to load file " + url.getPath(), Toast.LENGTH_LONG);
+                }
+                break;
+        }
+    }
+
+    private void loadFile(Uri uri) throws URISyntaxException, IOException {
+        File f = new File(new URI(uri.toString()));
+       //File f = new File(url.getPath());
+        String title = FilenameUtils.getBaseName(f.getName());
+        if (title.endsWith(CHN)) {
+            title = title.substring(0, title.length() - CHN.length());
+        }
+        String content = FileUtils.readFileToString(f);
+        titleView.setText(title);
+        contentView.setText(content);
     }
 
     private void handlePasteToTitle() {
@@ -210,17 +277,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private File getFileToSave() {
+        File targetDir = getFolderToSave();
+
+        String targetFileName = convertToValidFileName(titleView.getText().toString());
+        if (saveChineseLineOnly) {
+            targetFileName += CHN;
+        }
+        return new File(targetDir, targetFileName + ".txt");
+    }
+
+    @NonNull
+    private File getFolderToSave() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
         String datePath = df.format(Calendar.getInstance().getTime());
 
         File extStorageDir = Environment.getExternalStorageDirectory();
-        File targetDir = new File(extStorageDir, "clipboard2file/" + datePath);
-
-        String targetFileName = convertToValidFileName(titleView.getText().toString());
-        if (saveChineseLineOnly) {
-            targetFileName += targetFileName + ".chn";
-        }
-        return new File(targetDir, targetFileName + ".txt");
+        return new File(extStorageDir, "clipboard2file/" + datePath);
     }
 
     private boolean hasTitle() {

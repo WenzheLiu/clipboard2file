@@ -54,10 +54,16 @@
                 android:id="@+id/pasteToAppendContentBtn" />
 
             <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/clean_32px"
+            android:id="@+id/cleanBtn" />
+
+            <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/clean_32px"
-                android:id="@+id/cleanBtn" />
+                android:src="@drawable/folder_32px"
+                android:id="@+id/loadBtn" />
 
             <ImageButton
                 android:layout_width="wrap_content"
