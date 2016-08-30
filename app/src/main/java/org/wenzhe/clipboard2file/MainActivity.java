@@ -12,6 +12,8 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -48,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView titleView;
     private TextView contentView;
     private boolean saveChineseLineOnly = false;
+    @Nullable private File openedFile;
+    private ImageButton saveModeBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +59,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         titleView = (TextView) findViewById(R.id.titleView);
+        titleView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                openedFile = null;
+            }
+        });
+
         contentView = (TextView) findViewById(R.id.contentView);
 
         handlePasteToTitle();
@@ -180,14 +201,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadFile(Uri uri) throws URISyntaxException, IOException {
         File f = new File(new URI(uri.toString()));
-       //File f = new File(url.getPath());
         String title = FilenameUtils.getBaseName(f.getName());
         if (title.endsWith(CHN)) {
             title = title.substring(0, title.length() - CHN.length());
+            updateSaveMode(true);
+        } else {
+            updateSaveMode(false);
         }
         String content = FileUtils.readFileToString(f);
         titleView.setText(title);
         contentView.setText(content);
+        openedFile = f;
     }
 
     private void handlePasteToTitle() {
@@ -288,6 +312,9 @@ public class MainActivity extends AppCompatActivity {
 
     @NonNull
     private File getFolderToSave() {
+        if (openedFile != null) {
+            return openedFile.getParentFile();
+        }
         SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
         String datePath = df.format(Calendar.getInstance().getTime());
 
@@ -356,18 +383,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleSaveChineseLineOnly() {
-        final ImageButton btn = (ImageButton) findViewById(R.id.characterBtn);
-        btn.setOnClickListener(new View.OnClickListener() {
+        saveModeBtn = (ImageButton) findViewById(R.id.characterBtn);
+        saveModeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (saveChineseLineOnly) {
-                    btn.setImageResource(R.drawable.character_32px);
-                    saveChineseLineOnly = false;
-                } else {
-                    btn.setImageResource(R.drawable.china_32px);
-                    saveChineseLineOnly = true;
-                }
+                updateSaveMode(!saveChineseLineOnly);
             }
         });
+    }
+
+    private void updateSaveMode(boolean chineseLineOnly) {
+        saveChineseLineOnly = chineseLineOnly;
+        saveModeBtn.setImageResource(
+                saveChineseLineOnly ? R.drawable.china_32px : R.drawable.character_32px);
     }
 }
